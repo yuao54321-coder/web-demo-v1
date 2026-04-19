@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { navItems } from "./nav-items";
 import Navbar from "./components/Navbar";
+import { AuthProvider } from "./lib/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -25,12 +26,14 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <HashRouter>
-        <AppContent />
-      </HashRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <HashRouter>
+          <AppContent />
+        </HashRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

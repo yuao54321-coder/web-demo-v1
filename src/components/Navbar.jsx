@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Plane } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Plane, LogOut } from "lucide-react";
 import { navItems } from "../nav-items";
+import { useAuth } from "../lib/AuthContext";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,6 +53,27 @@ const Navbar = () => {
                 {item.title}
               </Link>
             ))}
+            {user ? (
+              <>
+                <span className="text-xs text-gray-500 ml-2 hidden sm:inline">
+                  {user.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={async () => { await signOut(); navigate('/'); }}
+                  className="flex items-center gap-1 px-3 py-2 rounded-full text-sm text-gray-600 hover:bg-gray-100"
+                  title="退出登录"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-orange-500 to-red-500 text-white ml-2"
+              >
+                登录
+              </Link>
+            )}
           </div>
         </div>
       </div>

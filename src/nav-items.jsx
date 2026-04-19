@@ -3,6 +3,7 @@ import Index from "./pages/Index.jsx";
 import Search from "./pages/Search.jsx";
 import AiPlan from "./pages/AiPlan.jsx";
 import MyTrips from "./pages/MyTrips.jsx";
+import Auth from "./pages/Auth.jsx";
 
 export const navItems = [
   {
@@ -28,5 +29,11 @@ export const navItems = [
     to: "/ai-plan",
     icon: <Compass className="h-4 w-4 hidden" />,
     page: <AiPlan />,
+  },
+  {
+    title: "登录",
+    to: "/auth",
+    icon: <Compass className="h-4 w-4 hidden" />,
+    page: <Auth />,
   },
 ];

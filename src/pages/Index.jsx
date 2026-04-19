@@ -6,9 +6,12 @@ import FlightCard from "../components/FlightCard";
 import AiPlanner from "../components/AiPlanner";
 import { cheapFlights, moreCheapFlights } from "../data/mockData";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [filters, setFilters] = useState({
     time: "all",
     from: "all",
@@ -16,13 +19,41 @@ const Index = () => {
     source: "all",
   });
   const [myTrip, setMyTrip] = useState(null);
+  const [allFlights, setAllFlights] = useState([...cheapFlights, ...moreCheapFlights]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('myTrip');
-    if (saved) setMyTrip(JSON.parse(saved));
+    supabase.from('flights').select('*').order('id').then(({ data }) => {
+      if (data && data.length) {
+        setAllFlights(data.map(f => ({
+          id: f.id,
+          from: f.from_city,
+          to: f.to_city,
+          country: f.country,
+          price: f.price,
+          tags: f.tags || [],
+          source: f.source,
+          sourceType: f.source_type,
+          code: f.code,
+          remainingTime: f.remaining_time,
+        })));
+      }
+    });
   }, []);
 
-  const allFlights = [...cheapFlights, ...moreCheapFlights];
+  useEffect(() => {
+    if (!user) { setMyTrip(null); return; }
+    supabase.from('trips').select('*').eq('user_id', user.id)
+      .order('created_at', { ascending: false }).limit(1)
+      .then(({ data }) => {
+        if (data && data.length) {
+          const t = data[0];
+          const days = t.departure_date
+            ? Math.max(0, Math.ceil((new Date(t.departure_date) - new Date()) / 86400000))
+            : 0;
+          setMyTrip({ destination: t.destination, days });
+        }
+      });
+  }, [user]);
   
   const filteredFlights = allFlights.filter(flight => {
     if (filters.from !== "all" && flight.from !== filters.from) return false;

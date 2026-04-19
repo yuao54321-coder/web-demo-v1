@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronUp, Lightbulb, Filter, ArrowUpDown, Plane, Luggage, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,20 +6,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { aiMoneySavingTips, cheapFlights } from "../data/mockData";
 import { formatPrice } from "../lib/utils";
 import AISteward from "../components/AISteward";
+import { supabase } from "../lib/supabase";
 
 const Search = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const from = searchParams.get("from") || "上海";
   const to = searchParams.get("to") || "大阪";
-  
+
   const [aiTipExpanded, setAiTipExpanded] = useState(false);
   const [sortBy, setSortBy] = useState("recommended");
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [showAISteward, setShowAISteward] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
+  const [flights, setFlights] = useState(cheapFlights);
 
-  const currentFlight = cheapFlights.find(f => f.from === from && f.to === to) || cheapFlights[0];
+  useEffect(() => {
+    supabase.from('flights').select('*').order('id').then(({ data }) => {
+      if (data && data.length) {
+        setFlights(data.map(f => ({
+          id: f.id,
+          from: f.from_city,
+          to: f.to_city,
+          country: f.country,
+          price: f.price,
+          tags: f.tags || [],
+          source: f.source,
+          sourceType: f.source_type,
+          code: f.code,
+          remainingTime: f.remaining_time,
+        })));
+      }
+    });
+  }, []);
+
+  const currentFlight = flights.find(f => f.from === from && f.to === to) || flights[0];
 
   // 航班详情视图
   const FlightDetail = ({ flight, onBack }) => {

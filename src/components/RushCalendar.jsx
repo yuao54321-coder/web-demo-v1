@@ -1,23 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { rushDeals } from "../data/mockData";
+import { rushDeals as mockDeals } from "../data/mockData";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/AuthContext";
 import RushModal from "./RushModal";
 
 const RushCalendar = () => {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
-  const [reminders, setReminders] = useState(() => {
-    const saved = localStorage.getItem('rushReminders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [reminders, setReminders] = useState([]);
+  const [deals, setDeals] = useState(mockDeals);
 
-  const visibleDeals = expanded ? rushDeals : rushDeals.slice(0, 3);
+  useEffect(() => {
+    supabase.from('rush_deals').select('*').order('id').then(({ data }) => {
+      if (data && data.length) {
+        setDeals(data.map(d => ({
+          id: d.id,
+          date: d.deal_date,
+          type: d.deal_type,
+          icon: d.icon,
+          name: d.name,
+          time: d.deal_time,
+          description: d.description,
+          price: d.price,
+          condition: d.condition,
+          reminderPrice: d.reminder_price,
+          rushPrice: d.rush_price,
+          isAutoRush: d.is_auto_rush,
+        })));
+      }
+    });
+  }, []);
 
-  const handleSetReminder = (dealId) => {
-    const newReminders = [...reminders, dealId];
-    setReminders(newReminders);
-    localStorage.setItem('rushReminders', JSON.stringify(newReminders));
+  useEffect(() => {
+    if (!user) { setReminders([]); return; }
+    supabase.from('reminders').select('deal_id').eq('user_id', user.id).then(({ data }) => {
+      if (data) setReminders(data.map(r => r.deal_id));
+    });
+  }, [user]);
+
+  const visibleDeals = expanded ? deals : deals.slice(0, 3);
+
+  const handleSetReminder = async (dealId) => {
+    if (!user) {
+      alert('请先登录再设置提醒');
+      return;
+    }
+    const { error } = await supabase.from('reminders').insert({ user_id: user.id, deal_id: dealId });
+    if (!error) setReminders([...reminders, dealId]);
   };
 
   const getTypeIcon = (type) => {

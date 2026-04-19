@@ -4,18 +4,22 @@ import { Plane, Briefcase, Clock, CheckCircle, XCircle, MapPin } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AISteward from "../components/AISteward";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/AuthContext";
 
 const MyTrips = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [trips, setTrips] = useState([]);
   const [rushOrders, setRushOrders] = useState([]);
 
   useEffect(() => {
-    const savedTrips = localStorage.getItem('myTrips');
-    const savedOrders = localStorage.getItem('rushOrders');
-    if (savedTrips) setTrips(JSON.parse(savedTrips));
-    if (savedOrders) setRushOrders(JSON.parse(savedOrders));
-  }, []);
+    if (!user) { setTrips([]); setRushOrders([]); return; }
+    supabase.from('trips').select('*, trip_segments(*)').eq('user_id', user.id)
+      .then(({ data }) => { if (data) setTrips(data); });
+    supabase.from('rush_orders').select('*, rush_deals(*)').eq('user_id', user.id)
+      .then(({ data }) => { if (data) setRushOrders(data); });
+  }, [user]);
 
   // 示例数据用于展示
   const hasData = true; // MVP阶段展示示例数据
